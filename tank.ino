@@ -5,7 +5,7 @@
 // Motor shield использует четыре контакта 4, 5, 6, 7 для управления моторами
 // 4 и 7 — для направления, 5 и 6 — для скорости
 //
-// DIR_*_INV - инвертировать значения, приходящее с управления,
+// DIR_*_INV - инвертировать значения, приходящее с управления
 #define SPEED_L      5
 #define DIR_L        4
 #define DIR_L_INV    false
@@ -59,12 +59,12 @@ void loop() {
     return;
   }
 
-  char val = Serial.read();
-  bool changed = stateMask != val;
+  char newMask = Serial.read();
+  bool changed = stateMask != newMask;
 
   
   if (changed){
-  	stateMask = val;
+  	stateMask = newMask;
 
   	controlMotors();
   }
