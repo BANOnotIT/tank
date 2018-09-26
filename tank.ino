@@ -4,19 +4,36 @@
 // а второй к клемме: M2+ и M2-
 // Motor shield использует четыре контакта 4, 5, 6, 7 для управления моторами
 // 4 и 7 — для направления, 5 и 6 — для скорости
+//
+// DIR_*_INV - инвертировать значения, приходящее с управления,
 #define SPEED_L      5
 #define DIR_L        4
-#define DIR_L_I      false
+#define DIR_L_INV    false
 
 #define SPEED_R      6
 #define DIR_R        7
-#define DIR_R_I      true
+#define DIR_R_INV    true
 
 
 // ---- \настройки/ ----
 #include <SoftwareSerial.h>
 
-char vel = 0b11111111;
+
+/*
+
+Маска состояния:
+ L   R
+ --------
+ 00000000
+ |||||^^^ - Скорость правого мотора
+ ||||^ - Направление правого мотора
+ |^^^ - Скорость левого мотора
+ ^ - Направление левого мотора
+
+*/
+
+
+char stateMask;
 
 
 void setup() {
@@ -31,8 +48,6 @@ void setup() {
     ;  // wait for serial port to connect. Needed for native USB port only
   }
 
-  analogWrite(SPEED_L, HIGH);
-
   controlMotors();
 
 }
@@ -40,19 +55,19 @@ void setup() {
 void loop() {
   delay(50);
 
-  if (Serial.available() != 2) {
+  if (!Serial.available()) {
     return;
   }
 
-
   char val = Serial.read();
+  bool changed = stateMask != val;
 
-  bool changed = vel != val;
+  
+  if (changed){
+  	stateMask = val;
 
-  vel = val;
-
-  if (changed)
-    controlMotors();
+  	controlMotors();
+  }
 
 }
 
@@ -60,22 +75,35 @@ void loop() {
 void controlMotors() {
 
   // Левый мотор
+  char leftMask = stateMask >> 4;
   analogWrite(
-    DIR_L,
-    (vel & 0b00001000) ?
-    HIGH :
-    LOW
+    DIR_L, getDirectrionFromMask(leftMask, DIR_L_I)
   );
-  analogWrite(SPEED_L, (vel & 0b00001111) ? HIGH : LOW);
+  analogWrite(SPEED_L, getVelocityFromMask(leftMask));
 
 
-  /*// Правый мотор
+  // Правый мотор
+  char rightMask = stateMask & 0b1111;
   analogWrite(
-    DIR_R,
-    vel[1] >> 7 ?
-    HIGH :
-    LOW
+    DIR_R, getDirectrionFromMask(rightMask, DIR_R_I)
   );
-  analogWrite(SPEED_R, vel[1] & SPEED_MASK << 1);
-*/
+  analogWrite(SPEED_R, getVelocityFromMask(rightMask));
+
+}
+
+
+
+char getDirectrionFromMask(char mask, bool invert) {
+
+  if (((mask & 0b1000) == 0b1000) != invert)
+  	return HIGH;
+  else 
+  	return LOW;
+
+}
+
+char getVelocityFromMask(char mask) {
+
+  return (mask & 0b0111) * 16;
+
 }
