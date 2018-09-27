@@ -8,11 +8,11 @@
 // DIR_*_INV - инвертировать значения, приходящее с управления
 #define SPEED_L      5
 #define DIR_L        4
-#define DIR_L_INV    false
+#define DIR_L_INV    true
 
 #define SPEED_R      6
 #define DIR_R        7
-#define DIR_R_INV    true
+#define DIR_R_INV    false
 
 
 // ---- \настройки/ ----
@@ -21,14 +21,14 @@
 
 /*
 
-Маска состояния:
- L   R
- --------
- 00000000
- |||||^^^ - Скорость правого мотора
- ||||^ - Направление правого мотора
- |^^^ - Скорость левого мотора
- ^ - Направление левого мотора
+  Маска состояния:
+  L   R
+  --------
+  00000000
+  |||||^^^ - Скорость правого мотора
+  ||||^ - Направление правого мотора
+  |^^^ - Скорость левого мотора
+  ^ - Направление левого мотора
 
 */
 
@@ -53,7 +53,6 @@ void setup() {
 }
 
 void loop() {
-  delay(50);
 
   if (!Serial.available()) {
     return;
@@ -62,32 +61,41 @@ void loop() {
   char newMask = Serial.read();
   bool changed = stateMask != newMask;
 
-  
-  if (changed){
-  	stateMask = newMask;
 
-  	controlMotors();
+  if (changed) {
+    stateMask = newMask;
+
+    controlMotors();
   }
+
+  delay(50);
 
 }
 
 
 void controlMotors() {
 
+  Serial.print((int)stateMask);
+  Serial.print(": ");
+
   // Левый мотор
   char leftMask = stateMask >> 4;
+  Serial.print((int)leftMask);
   analogWrite(
-    DIR_L, getDirectrionFromMask(leftMask, DIR_L_I)
+    DIR_L, getDirectrionFromMask(leftMask, DIR_L_INV)
   );
   analogWrite(SPEED_L, getVelocityFromMask(leftMask));
 
+  Serial.print(' ');
 
   // Правый мотор
   char rightMask = stateMask & 0b1111;
+  Serial.print((int)rightMask);
   analogWrite(
-    DIR_R, getDirectrionFromMask(rightMask, DIR_R_I)
+    DIR_R, getDirectrionFromMask(rightMask, DIR_R_INV)
   );
   analogWrite(SPEED_R, getVelocityFromMask(rightMask));
+  Serial.print('\n');
 
 }
 
@@ -96,9 +104,9 @@ void controlMotors() {
 char getDirectrionFromMask(char mask, bool invert) {
 
   if (((mask & 0b1000) == 0b1000) != invert)
-  	return HIGH;
-  else 
-  	return LOW;
+    return HIGH;
+  else
+    return LOW;
 
 }
 
