@@ -33,7 +33,7 @@
 */
 
 
-char stateMask;
+unsigned char stateMask;
 
 
 void setup() {
@@ -58,7 +58,7 @@ void loop() {
     return;
   }
 
-  char newMask = Serial.read();
+  unsigned char newMask = Serial.read();
   bool changed = stateMask != newMask;
 
 
@@ -79,20 +79,20 @@ void controlMotors() {
   Serial.print(": ");
 
   // Левый мотор
-  char leftMask = stateMask >> 4;
+  unsigned char leftMask = stateMask >> 4;
   Serial.print((int)leftMask);
   analogWrite(
-    DIR_L, getDirectrionFromMask(leftMask, DIR_L_INV)
+    DIR_L, getDirectrionFromMask(leftMask, DIR_L_INV) * 255
   );
   analogWrite(SPEED_L, getVelocityFromMask(leftMask));
 
   Serial.print(' ');
 
   // Правый мотор
-  char rightMask = stateMask & 0b1111;
-  Serial.print((int)rightMask);
+  unsigned char rightMask = stateMask & 0b1111;
+  Serial.print((unsigned int)rightMask);
   analogWrite(
-    DIR_R, getDirectrionFromMask(rightMask, DIR_R_INV)
+    DIR_R, getDirectrionFromMask(rightMask, DIR_R_INV) * 255
   );
   analogWrite(SPEED_R, getVelocityFromMask(rightMask));
   Serial.print('\n');
@@ -101,16 +101,15 @@ void controlMotors() {
 
 
 
-char getDirectrionFromMask(char mask, bool invert) {
-
-  if (((mask & 0b1000) == 0b1000) != invert)
+unsigned char getDirectrionFromMask(unsigned char mask, bool invert) {
+  if ((mask >> 3) != invert)
     return HIGH;
   else
     return LOW;
 
 }
 
-char getVelocityFromMask(char mask) {
+unsigned char getVelocityFromMask(unsigned char mask) {
 
   return (mask & 0b0111) * 16;
 
